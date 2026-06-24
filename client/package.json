@@ -1,5 +1,5 @@
 {
-  "name": "kid-friendly-todo-client",
+  "name": "star-tasks-rewards-client",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -12,15 +12,16 @@
   },
   "dependencies": {
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2"
   },
   "devDependencies": {
-    "@testing-library/jest-dom": "^6.4.8",
-    "@testing-library/react": "^16.0.0",
+    "@testing-library/jest-dom": "^6.5.0",
+    "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^14.5.2",
     "@vitejs/plugin-react": "^4.3.1",
-    "jsdom": "^24.1.1",
-    "vite": "^5.4.2",
-    "vitest": "^2.0.5"
+    "jsdom": "^25.0.1",
+    "vite": "^5.4.8",
+    "vitest": "^2.1.2"
   }
 }

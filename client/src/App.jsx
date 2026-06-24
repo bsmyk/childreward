@@ -1,9 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { BrowserRouter, NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { listTodos, completeTodo } from './api.js'
 import StarBalance from './components/StarBalance.jsx'
 import TaskList from './components/TaskList.jsx'
+import Rewards from './pages/Rewards'
+import ParentPanel from './pages/ParentPanel'
 
-export default function App() {
+// The kid-facing task board: stars are derived purely from completed tasks, so
+// the balance can never double-count and always recomputes from the list.
+function Tasks() {
   const [todos, setTodos] = useState([])
   const [status, setStatus] = useState('loading') // 'loading' | 'ready' | 'error'
 
@@ -22,8 +27,6 @@ export default function App() {
     load()
   }, [load])
 
-  // Star balance is derived purely from completed-task count, so it can never
-  // double-count and always recomputes correctly from the loaded list.
   const starBalance = useMemo(
     () => todos.filter((t) => t.done).length,
     [todos],
@@ -50,28 +53,49 @@ export default function App() {
   }, [todos])
 
   return (
-    <div className="app">
+    <>
       <StarBalance count={starBalance} />
-      <main className="app__main">
-        {status === 'loading' && (
-          <p className="app__message" role="status">
-            Loading your tasks…
-          </p>
-        )}
 
-        {status === 'error' && (
-          <div className="app__message app__message--error" role="alert">
-            <p>Oops! We couldn’t load your tasks.</p>
-            <button className="app__retry" type="button" onClick={load}>
-              Try again
-            </button>
-          </div>
-        )}
+      {status === 'loading' && (
+        <p className="app__message" role="status">
+          Loading your tasks…
+        </p>
+      )}
 
-        {status === 'ready' && (
-          <TaskList todos={todos} onComplete={handleComplete} />
-        )}
-      </main>
-    </div>
+      {status === 'error' && (
+        <div className="app__message app__message--error" role="alert">
+          <p>Oops! We couldn’t load your tasks.</p>
+          <button className="app__retry" type="button" onClick={load}>
+            Try again
+          </button>
+        </div>
+      )}
+
+      {status === 'ready' && (
+        <TaskList todos={todos} onComplete={handleComplete} />
+      )}
+    </>
+  )
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <div className="app">
+        <nav className="app__nav">
+          <NavLink to="/">Tasks</NavLink>
+          <NavLink to="/rewards">Rewards</NavLink>
+          <NavLink to="/parent">Parent Panel</NavLink>
+        </nav>
+        <main className="app__main">
+          <Routes>
+            <Route path="/" element={<Tasks />} />
+            <Route path="/rewards" element={<Rewards />} />
+            <Route path="/parent" element={<ParentPanel />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </main>
+      </div>
+    </BrowserRouter>
   )
 }
