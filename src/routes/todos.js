@@ -3,142 +3,116 @@
 const express = require('express');
 
 const store = require('../lib/store');
-const { badRequest, notFound } = require('../lib/errors');
+
+// Fixed, configurable star award for completing a todo. Overridable via env.
+const EARN_STARS = Number.parseInt(process.env.EARN_STARS, 10) || 10;
 
 /**
- * Resolve the JSON file backing the todos collection. Honors the
- * `TODOS_FILE` env var so tests can isolate persistence per run; otherwise
- * falls back to a bare `todos.json` (resolved into the store's default data/
- * directory).
+ * Build the `/todos` router.
  *
- * @returns {string}
- */
-function todosFile() {
-  return process.env.TODOS_FILE || 'todos.json';
-}
-
-/**
- * Load all todos from disk.
+ * Todo shape: `{ id, title, completed }`. The first time a todo transitions
+ * from incomplete → complete, exactly one positive ledger entry is appended.
+ * A persisted `awarded` guard ensures re-completing never double-awards.
  *
- * @returns {Array<object>}
+ * @param {object} deps
+ * @param {string} deps.file todos store path
+ * @param {{ append: Function }} deps.ledger ledger to credit on completion
+ * @returns {import('express').Router}
  */
-function readTodos() {
-  return store.read(todosFile(), []);
-}
+function createTodosRouter({ file = 'todos.json', ledger }) {
+  const router = express.Router();
 
-/**
- * Persist the full todos array to disk.
- *
- * @param {Array<object>} todos
- */
-function writeTodos(todos) {
-  store.write(todosFile(), todos);
-}
+  const readAll = () => store.read(file, []);
+  const writeAll = (todos) => store.write(file, todos);
+  const nextId = (todos) =>
+    todos.reduce((max, t) => (t.id > max ? t.id : max), 0) + 1;
 
-/**
- * Generate a stable, unique id. `:id` lookups compare as strings, so we
- * return a string here too.
- *
- * @param {Array<object>} todos existing todos
- * @returns {string}
- */
-function nextId(todos) {
-  const max = todos.reduce((acc, t) => Math.max(acc, Number(t.id) || 0), 0);
-  return String(max + 1);
-}
+  // Strip internal guard field from API responses.
+  const present = ({ id, title, completed }) => ({ id, title, completed });
 
-/**
- * Validate and normalize a `title` value. Throws a 400 on bad input.
- *
- * @param {*} title
- * @returns {string} trimmed title
- */
-function validateTitle(title) {
-  if (typeof title !== 'string' || title.trim() === '') {
-    throw badRequest('invalid_title', 'title must be a non-empty string');
-  }
-  return title.trim();
-}
+  router.get('/', (req, res) => {
+    res.json(readAll().map(present));
+  });
 
-const router = express.Router();
-
-// POST /todos — create
-router.post('/', (req, res) => {
-  const body = req.body || {};
-  const title = validateTitle(body.title);
-
-  const todos = readTodos();
-  const todo = {
-    id: nextId(todos),
-    title,
-    done: false,
-    createdAt: new Date().toISOString(),
-  };
-  todos.push(todo);
-  writeTodos(todos);
-
-  res.status(201).json(todo);
-});
-
-// GET /todos — list all
-router.get('/', (req, res) => {
-  res.status(200).json(readTodos());
-});
-
-// GET /todos/:id — read one
-router.get('/:id', (req, res) => {
-  const todo = readTodos().find((t) => String(t.id) === req.params.id);
-  if (!todo) {
-    throw notFound(`No todo with id ${req.params.id}`);
-  }
-  res.status(200).json(todo);
-});
-
-// PATCH /todos/:id — partial update
-router.patch('/:id', (req, res) => {
-  const body = req.body || {};
-  const hasTitle = Object.prototype.hasOwnProperty.call(body, 'title');
-  const hasDone = Object.prototype.hasOwnProperty.call(body, 'done');
-
-  if (!hasTitle && !hasDone) {
-    throw badRequest('no_fields', 'provide at least one of: title, done');
-  }
-
-  const patch = {};
-  if (hasTitle) {
-    patch.title = validateTitle(body.title);
-  }
-  if (hasDone) {
-    if (typeof body.done !== 'boolean') {
-      throw badRequest('invalid_done', 'done must be a boolean');
+  router.post('/', (req, res) => {
+    const { title } = req.body || {};
+    if (typeof title !== 'string' || title.trim() === '') {
+      return res.status(400).json({ error: 'title is required' });
     }
-    patch.done = body.done;
+    const todos = readAll();
+    const todo = { id: nextId(todos), title, completed: false, awarded: false };
+    todos.push(todo);
+    writeAll(todos);
+    return res.status(201).json(present(todo));
+  });
+
+  router.get('/:id', (req, res) => {
+    const todo = readAll().find((t) => String(t.id) === String(req.params.id));
+    if (!todo) {
+      return res.status(404).json({ error: 'todo not found' });
+    }
+    return res.json(present(todo));
+  });
+
+  // Shared update logic for PATCH and the dedicated complete action.
+  function applyUpdate(req, res, changes) {
+    const todos = readAll();
+    const todo = todos.find((t) => String(t.id) === String(req.params.id));
+    if (!todo) {
+      return res.status(404).json({ error: 'todo not found' });
+    }
+
+    if ('title' in changes) {
+      if (typeof changes.title !== 'string' || changes.title.trim() === '') {
+        return res.status(400).json({ error: 'title must be a non-empty string' });
+      }
+      todo.title = changes.title;
+    }
+
+    let justCompleted = false;
+    if ('completed' in changes) {
+      const next = Boolean(changes.completed);
+      if (next && !todo.completed) {
+        justCompleted = true;
+      }
+      todo.completed = next;
+    }
+
+    // Earn exactly once on the first incomplete → complete transition.
+    if (justCompleted && !todo.awarded) {
+      ledger.append({
+        delta: EARN_STARS,
+        reason: 'todo_completed',
+        refId: todo.id,
+      });
+      todo.awarded = true;
+    }
+
+    writeAll(todos);
+    return res.json(present(todo));
   }
 
-  const todos = readTodos();
-  const todo = todos.find((t) => String(t.id) === req.params.id);
-  if (!todo) {
-    throw notFound(`No todo with id ${req.params.id}`);
-  }
+  router.patch('/:id', (req, res) => applyUpdate(req, res, req.body || {}));
 
-  Object.assign(todo, patch);
-  writeTodos(todos);
+  // Dedicated complete action — same single-award guarantee as PATCH.
+  router.post('/:id/complete', (req, res) =>
+    applyUpdate(req, res, { completed: true })
+  );
 
-  res.status(200).json(todo);
-});
+  router.delete('/:id', (req, res) => {
+    const todos = readAll();
+    const idx = todos.findIndex((t) => String(t.id) === String(req.params.id));
+    if (idx === -1) {
+      return res.status(404).json({ error: 'todo not found' });
+    }
+    todos.splice(idx, 1);
+    writeAll(todos);
+    return res.status(204).end();
+  });
 
-// DELETE /todos/:id — remove
-router.delete('/:id', (req, res) => {
-  const todos = readTodos();
-  const index = todos.findIndex((t) => String(t.id) === req.params.id);
-  if (index === -1) {
-    throw notFound(`No todo with id ${req.params.id}`);
-  }
+  return router;
+}
 
-  todos.splice(index, 1);
-  writeTodos(todos);
-
-  res.status(204).end();
-});
-
-module.exports = router;
+module.exports = createTodosRouter;
+module.exports.createTodosRouter = createTodosRouter;
+module.exports.EARN_STARS = EARN_STARS;

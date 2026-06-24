@@ -1,9 +1,14 @@
 'use strict';
 
+const path = require('path');
+
 const express = require('express');
 
-const todosRouter = require('./routes/todos');
-const { HttpError } = require('./lib/errors');
+const store = require('./lib/store');
+const createLedger = require('./lib/ledger');
+const createTodosRouter = require('./routes/todos');
+const createRewardsRouter = require('./routes/rewards');
+const createEconomyRouter = require('./routes/economy');
 
 /**
  * Build and configure the Express application.
@@ -12,9 +17,12 @@ const { HttpError } = require('./lib/errors');
  * import it and drive it via Supertest. The only file that opens a socket is
  * src/server.js.
  *
+ * @param {object} [options]
+ * @param {string} [options.dataDir] directory for the JSON store files. Defaults
+ *   to the store's `data/` dir. Tests pass a temp dir to isolate persistence.
  * @returns {import('express').Express} configured Express app
  */
-function createApp() {
+function createApp({ dataDir = store.DATA_DIR } = {}) {
   const app = express();
 
   app.use(express.json());
@@ -23,25 +31,15 @@ function createApp() {
     res.json({ status: 'ok' });
   });
 
-  app.use('/todos', todosRouter);
+  const todosFile = path.join(dataDir, 'todos.json');
+  const rewardsFile = path.join(dataDir, 'rewards.json');
+  const ledgerFile = path.join(dataDir, 'ledger.json');
 
-  // Centralized error handler — MUST be registered last. Renders HttpError
-  // (and any unexpected error) into the shared shape:
-  //   { error: { code, message } }
-  // eslint-disable-next-line no-unused-vars
-  app.use((err, req, res, next) => {
-    if (err instanceof HttpError) {
-      return res
-        .status(err.status)
-        .json({ error: { code: err.code, message: err.message } });
-    }
+  const ledger = createLedger(ledgerFile);
 
-    // eslint-disable-next-line no-console
-    console.error(err);
-    return res
-      .status(500)
-      .json({ error: { code: 'internal_error', message: 'Internal server error' } });
-  });
+  app.use('/todos', createTodosRouter({ file: todosFile, ledger }));
+  app.use('/rewards', createRewardsRouter({ file: rewardsFile }));
+  app.use('/', createEconomyRouter({ ledger, rewardsFile }));
 
   return app;
 }
