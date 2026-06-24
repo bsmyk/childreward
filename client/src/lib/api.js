@@ -1,6 +1,8 @@
 // Central API client. All network calls live here so components hold no raw
 // fetch URLs. The base URL can be overridden via the VITE_API_BASE env var;
 // it defaults to '' so requests hit the same origin (the Express API) in dev.
+import { getAccessToken } from './auth'
+
 const BASE = import.meta.env?.VITE_API_BASE ?? ''
 
 /**
@@ -20,6 +22,14 @@ async function request(path, { method = 'GET', body } = {}) {
   if (body !== undefined) {
     opts.headers['Content-Type'] = 'application/json'
     opts.body = JSON.stringify(body)
+  }
+
+  // Attach the Supabase session JWT when the user is signed in. Unauthenticated
+  // calls simply omit the header and surface the existing ApiError shape on a
+  // 401 from the server.
+  const token = await getAccessToken()
+  if (token) {
+    opts.headers['Authorization'] = `Bearer ${token}`
   }
 
   const res = await fetch(`${BASE}${path}`, opts)

@@ -1,13 +1,22 @@
 {
   "name": "backend-scaffold",
   "version": "0.1.0",
-  "description": "Minimal Express JSON API scaffold with file-based JSON persistence",
+  "description": "Express JSON API with Supabase Postgres persistence and Supabase Auth (parent/kid roles)",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "test": "jest"
   },
+  "jest": {
+    "roots": [
+      "<rootDir>/test"
+    ],
+    "setupFiles": [
+      "<rootDir>/test/setup.env.js"
+    ]
+  },
   "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
     "express": "^4.19.2"
   },
   "devDependencies": {
