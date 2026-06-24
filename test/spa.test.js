@@ -64,6 +64,20 @@ describe('SPA static serving (build present)', () => {
     // 404 (not 200) proves the SPA shell did not take over this API path.
     expect(res.text || '').not.toContain('id="root"');
   });
+
+  // Merge regression: the reward API routes (mounted at non-/api/ paths such as
+  // /rewards and /todos) must keep returning JSON when a build is present. The
+  // SPA `app.get('*')` fallback only excludes /health and /api/*, so these paths
+  // survive solely because the API routers are registered BEFORE the fallback.
+  // This guards the merge of API routes + SPA static serving in src/app.js.
+  it('does NOT shadow real API routes: GET /rewards returns JSON', async () => {
+    const res = await request(app).get('/rewards');
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toMatch(/application\/json/);
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.text || '').not.toContain('id="root"');
+  });
 });
 
 describe('SPA static serving (build absent)', () => {
