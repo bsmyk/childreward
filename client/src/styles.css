@@ -1,0 +1,142 @@
+:root {
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #1f2933;
+}
+
+body {
+  margin: 0;
+  background: #fafafa;
+}
+
+.app__nav {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: #fff3c4;
+  border-bottom: 2px solid #f0b429;
+}
+
+.app__nav a {
+  text-decoration: none;
+  font-weight: 600;
+  color: #8a6d00;
+}
+
+.app__nav a.active {
+  text-decoration: underline;
+}
+
+.app__main {
+  padding: 1.5rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.rewards-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.star-balance {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.rewards-page__feedback {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.rewards-page__feedback--success {
+  background: #e3f9e5;
+  color: #207227;
+}
+
+.rewards-page__feedback--error,
+.rewards-page__error,
+.manager__error {
+  background: #ffeeee;
+  color: #ab091e;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.rewards-page__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.reward-card {
+  background: #fff;
+  border: 1px solid #e4e7eb;
+  border-radius: 10px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.reward-card__icon {
+  font-size: 2.5rem;
+}
+
+.reward-card__name {
+  font-weight: 600;
+  margin: 0.5rem 0;
+}
+
+.reward-card__redeem {
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.9rem;
+  border: none;
+  border-radius: 6px;
+  background: #f0b429;
+  color: #503e00;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.reward-card__redeem:disabled {
+  background: #e4e7eb;
+  color: #9aa5b1;
+  cursor: not-allowed;
+}
+
+.parent-panel__tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.parent-panel__tabs .is-active {
+  background: #f0b429;
+}
+
+.manager__list {
+  list-style: none;
+  padding: 0;
+}
+
+.manager__list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.manager__title {
+  flex: 1;
+}
+
+.manager__create {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
