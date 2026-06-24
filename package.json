@@ -7,6 +7,12 @@
     "start": "node src/server.js",
     "test": "jest"
   },
+  "jest": {
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/test"
+    ]
+  },
   "dependencies": {
     "express": "^4.19.2"
   },
