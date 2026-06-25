@@ -140,3 +140,48 @@ body {
   margin-bottom: 1rem;
   flex-wrap: wrap;
 }
+
+/* --- Achievements --------------------------------------------------------- */
+.achievement-shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.achievement-card {
+  background: #fff;
+  border: 1px solid #e4e7eb;
+  border-radius: 10px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.achievement-card--unlocked {
+  border-color: #f0b429;
+  box-shadow: 0 0 0 2px rgba(240, 180, 41, 0.25);
+}
+
+.achievement-card--locked {
+  opacity: 0.55;
+  filter: grayscale(1);
+}
+
+.achievement-card__icon {
+  font-size: 2.5rem;
+}
+
+.achievement-card__title {
+  font-weight: 600;
+  margin: 0.5rem 0 0.25rem;
+}
+
+.achievement-card__description {
+  color: #616e7c;
+  font-size: 0.9rem;
+}
+
+.achievement-card__earned {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #503e00;
+}

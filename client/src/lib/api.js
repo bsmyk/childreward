@@ -101,3 +101,9 @@ export function updateTodo(id, changes) {
 export function deleteTodo(id) {
   return request(`/todos/${id}`, { method: 'DELETE' })
 }
+
+// --- Achievements ----------------------------------------------------------
+
+export function getAchievements() {
+  return request('/achievements')
+}

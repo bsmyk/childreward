@@ -10,6 +10,7 @@ const createLedger = require('./lib/ledger');
 const createTodosRouter = require('./routes/todos');
 const createRewardsRouter = require('./routes/rewards');
 const createEconomyRouter = require('./routes/economy');
+const createAchievementsRouter = require('./routes/achievements');
 
 /**
  * Build and configure the Express application.
@@ -49,6 +50,7 @@ function createApp({ dataDir = store.DATA_DIR } = {}) {
   app.use('/todos', createTodosRouter({ file: todosFile, ledger }));
   app.use('/rewards', createRewardsRouter({ file: rewardsFile }));
   app.use('/', createEconomyRouter({ ledger, rewardsFile }));
+  app.use('/', createAchievementsRouter({ ledger }));
 
   return app;
 }

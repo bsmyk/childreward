@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   ApiError,
   createReward,
+  getAchievements,
   deleteReward,
   getBalance,
   listRewards,
@@ -76,5 +77,17 @@ describe('api client', () => {
     expect(fetchMock.mock.calls[1][1].method).toBe('PATCH')
     expect(fetchMock.mock.calls[2][0]).toBe('/rewards/x')
     expect(fetchMock.mock.calls[2][1].method).toBe('DELETE')
+  })
+
+  it('getAchievements GETs /achievements and returns the array', async () => {
+    const data = [
+      { id: 'first_todo', title: 'Getting Started', unlocked: true, unlockedAt: '2026-06-01T00:00:00.000Z' },
+    ]
+    const fetchMock = mockFetch(200, data)
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await getAchievements()
+    expect(result).toEqual(data)
+    expect(fetchMock).toHaveBeenCalledWith('/achievements', expect.objectContaining({ method: 'GET' }))
   })
 })
