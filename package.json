@@ -23,10 +23,5 @@
   "devDependencies": {
     "jest": "^29.7.0",
     "supertest": "^7.0.0"
-  },
-  "jest": {
-    "roots": [
-      "<rootDir>/test"
-    ]
   }
 }
